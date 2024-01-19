@@ -1,430 +1,294 @@
-
-LEFT = -1
-RIGHT = 1
-
-
-def is_outside_list(letter_list, index):
-        """
-        Given a list of letters and an index, returns True if the index
-            is outside the bounds of the list, False otherwise.
-
-        Args:
-        - letter_list (List[str]): A list of letters.
-        - index (int): The index to check.
-
-        Returns:
-        - bool: True if the index is outside the bounds 
-        of the list, False otherwise.
-
-        Example:
-        >>> is_outside_list(['a', 'b', 'c'], -1)
-        True
-        >>> is_outside_list(['a', 'b', 'c'], 0)
-        False
-        >>> is_outside_list(['a', 'b', 'c'], 3)
-        True
-        """
-        # Check if the index is less than zero or greater 
-        # than or equal to the length of the list
-        if index < 0 or index >= len(letter_list):
-                # If the index is outside the bounds of the list, return True
-                return True
-        else:
-                # If the index is within the bounds of the list, return False
-                return False
+# Import necessary libraries
+import math
+import random
 
 
+# Constants for latitude and longitude bounds and Earth radius
+MIN_LAT = -90
+MAX_LAT = 90
+MIN_LONG = -180
+MAX_LONG = 180
+EARTH_RADIUS = 6371
 
-def letter_positions(letter_list, character):
-        """
-        Given a list of letters and a character, returns a list of
-            indices where the character appears in the list.
 
-        Args:
-        - letter_list (List[str]): A list of letters.
-        - character (str): The character to search for.
+# Define the coordinates for the restricted zone and hazardous area
+restricted_latitude = 25.0
+restricted_longitude = -71.0
+hazardous_latitude_min = 40.0
+hazardous_latitude_max = 41.0
+hazardous_longitude_min = -71.0
+hazardous_longitude_max = -70.0
 
-        Returns:
-        - List[int]: A list of indices where the character appears in the list.
 
-        Example:
-        >>> letter_positions(['a', 'b', 'c', 'a'], 'a')
-        [0, 3]
-        >>> letter_positions(['a', 'b', 'c', 'a'], 'b')
-        [1]
-        >>> letter_positions(['a', 'b', 'c', 'a'], 'd')
-        []
-
-        """
-        # Initialize an empty list to store the indices 
-        # where the character appears
-        indices = []
-        
-        # Loop through each letter in the list
-        for i in range(len(letter_list)):
-                # If the current letter matches the character 
-                # we're searching for, add its index to the list
-                if letter_list[i] == character:
-                        indices.append(i)
-        
-        # Return the list of indices where the character appears
-        return indices
+#Set global variables to 0 to start
+num_passengers = 0
+vessel_length = 0
+vessel_width = 0
+latitude = 0
+longitude = 0
+vessel_length = 0
+vessel_width = 0
+choice = 0
+new_latitude = 0
+new_longitude = 0
 
 
 
-def valid_word_pos_direction(letter_list, word, index, direction):
+
+
+
+def meter_to_feet(distance):
     """
-    Given a list of letters, a word, an index, and a direction 
-    (LEFT or RIGHT), returns True if the word can be found starting
-      from the given index in the given direction, False otherwise.
-
-    Args:
-    - letter_list (List[str]): A list of letters.
-    - word (str): A word to search for.
-    - index (int): The index in the letter_list where 
-    the search should start.
-    - direction (int): The direction in which to 
-    search for the word (LEFT or RIGHT).
-
-    Returns:
-    - bool: True if the word can be found starting from the 
-    given index in the given direction, False otherwise.
-
-    Example:
-    >>> valid_word_pos_direction(['a', 'b', 'c', 'd', 'e'], 'ab', 0, RIGHT)
-    True
-    >>> valid_word_pos_direction(['a', 'b', 'c', 'd', 'e'], 'ab', 1, LEFT)
-    True
-    >>> valid_word_pos_direction(['a', 'b', 'c', 'd', 'e'], 'cd', 2, RIGHT)
-    True
+    Function to convert meters to feet
     """
-    # Calculate the end index based on the direction
-    end_index = index + direction * (len(word) - 1)
+    return round ((distance) * 3.28, 2)
+
+
+def degrees_to_radians(angle):
+    """
+    Function to convert degrees to radians
+    """
+    radian_angle = round(( angle * ( math.pi / 180) ),2)
+
+    return radian_angle
+
+
+def get_vessel_dimensions():
+    """
+    Function to get vessel dimensions from the user
+    """ 
+    vessel_length = float(input('Enter the vessel length (in meter): '))
+    vessel_width = float(input('Enter the vessel width (in meter): '))
     
-    # Check if the end index is within the bounds of the list
-    if end_index < 0 or end_index >= len(letter_list):
+
+    vessel_length = meter_to_feet(vessel_length)
+    vessel_width = meter_to_feet(vessel_width)
+
+    return (vessel_length, vessel_width)
+
+
+
+def get_valid_coordinate(val_name, min_float, max_float):
+    """
+    Function to get a valid coordinate within specified bounds
+    """
+    val = float(input (f'What is your {val_name} ?'))
+
+    while float(min_float) > val or float(max_float) < val:
+        print(f'Invalid {val_name}')
+        val = float(input (f'What is your {val_name} ?'))
+            
+    return val  
+
+
+def get_gps_location():
+    """
+    Function to get GPS location from the user
+    """    
+    global latitude
+    global longitude
+    latitude = get_valid_coordinate('latitude',MIN_LAT,MAX_LAT)
+    longitude = get_valid_coordinate('longitude',MIN_LONG,MAX_LONG)
+    return latitude, longitude
+
+
+
+def distance_two_points(latitude_1, longitude_1, latitude_2, longitude_2) :
+    """
+    Function to calculate the distance between two points on Earth
+    """    
+    #conversion to radians
+    latitude_1 = degrees_to_radians(latitude_1)
+    longitude_1 = degrees_to_radians(longitude_1)
+    latitude_2 = degrees_to_radians(latitude_2)
+    longitude_2 = degrees_to_radians(longitude_2)
+
+    # Calculate the differences in latitude and longitude
+    delta_latitude = latitude_2 - latitude_1
+    delta_longitude = longitude_2 - longitude_1
+        
+    #Haversine formula
+    part1 = math.sin(delta_latitude / 2) ** 2
+    part2 = math.cos((latitude_1)) * math.cos((latitude_2))
+    part3 = math.sin(delta_longitude / 2) ** 2
+
+    a = part1 + part2 * part3
+    
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    distance = EARTH_RADIUS * c
+
+    return round(distance, 2)
+
+
+def check_safety(vessel_latitude, vessel_longitude) :
+    """
+    Function to check the safety of the vessel's location
+    """
+    # Calculate the distance between the vessel's location
+    # and the restricted zone
+    distance_to_restricted_zone = distance_two_points(
+        vessel_latitude, vessel_longitude,
+        restricted_latitude, restricted_longitude
+    )
+
+    # Check if the vessel is close to the restricted zone
+    if distance_to_restricted_zone <= 400.0:
+        print("Error: Restricted zone!")
+
+
+
+    # Check if the vessel is in the hazardous area
+    elif (
+        hazardous_latitude_min 
+        <= vessel_latitude <= hazardous_latitude_max and
+        hazardous_longitude_min <= vessel_longitude 
+        <= hazardous_longitude_max
+    ):
+        print("Warning: Hazardous area! Navigate with caution.")
+    
+    else:
+        print("Safe navigation.")
+
+def get_max_capacity(length, width):
+    """
+    Function to calculate the maximum capacity of the vessel
+    """
+    if length <= 26:
+        capacity = (length * width) / 15
+    else:
+        capacity = (length * width) / 15 + ((length - 26) * 3)
+    
+    # Round down the capacity to the nearest integer
+    capacity = int(capacity)
+    
+    return capacity
+
+
+def passengers_on_boat(vessel_length, vessel_width, num_passengers):
+    """
+    Function to check the number of passengers on the boat
+    """    
+    max_capacity = get_max_capacity(vessel_length, vessel_width)
+
+    # Check if the number of passengers exceeds the maximum capacity
+    if num_passengers > max_capacity:
         return False
+
+    # Check if the number of passengers can be distributed equally
+    if num_passengers % 4 == 0:
+        return True
+    else:
+        return False
+
+
+def update_coordinate(position, min_float, max_float):
+    """
+    Function to update the boat's coordinate due to waves
+    """  
+    random.seed(123)
     
-    # Check if the letters in the list match the letters in the word
-    for i in range(len(word)):
-        if letter_list[index + i * direction] != word[i]:
-            return False
-    
-    # If all letters match, return True
-    return True
-
-from typing import List
-
-
-def direction_word_given_position(letter_list, word, index):
-    """
-    Given a list of letters, a word, and an index, returns a list
-      of directions (LEFT or RIGHT) in which the word can be found 
-      starting from the given index.
-
-    Args:
-    - letter_list (List[str]): A list of letters.
-    - word (str): A word to search for.
-    - index (int): The index in the letter_list where 
-      the search should start.
-
-    Returns:
-    - List[int]: A list of directions (LEFT or RIGHT) 
-    in which the word can be found starting from the given index.
-
-    Example:
-    >>> direction_word_given_position(['a', 'b', 'c', 'd', 'e'], 'ab', 0)
-    [RIGHT]
-    >>> direction_word_given_position(['a', 'b', 'c', 'd', 'e'], 'ab', 1)
-    [LEFT]
-    >>> direction_word_given_position(['a', 'b', 'c', 'd', 'e'], 'cd', 2)
-    [LEFT, RIGHT]
-    """
-    # Check if the first letter of the word is found 
-    # at the given index in the list of letters
-    if letter_list[index] != word[0]:
-        return []
-    
-    # Check if the word can be found in both directions
-    if valid_word_pos_direction(letter_list, word, index, LEFT) and \
-        valid_word_pos_direction(letter_list, word, index, RIGHT):
-        return [LEFT, RIGHT]
-    
-    # Check if the word can be found in the left direction only
-    if valid_word_pos_direction(letter_list, word, index, LEFT):
-        return [LEFT]
-    
-    # Check if the word can be found in the right direction only
-    if valid_word_pos_direction(letter_list, word, index, RIGHT):
-        return [RIGHT]
-    
-    # If the word cannot be found in either direction, return an empty list
-    return []
-
-
-
-def position_direction_word(letter_list, word):
-    """
-    Given a list of letters and a word, returns a list of 
-    positions and directions where the word can be found in the list.
-
-    Args:
-    - letter_list (List[str]): A list of letters.
-    - word (str): A word to search for.
-
-    Returns:
-    - List[List[int]]: A list of positions and directions where 
-    the word can be found in the list.
-
-    Example:
-    >>> position_direction_word(['a', 'b', 'c', 'd', 'e'], 'ab')
-    [[0, 1]]
-    >>> position_direction_word(['a', 'b', 'c', 'd', 'e'], 'cd')
-    [[2, -1], [2, 1]]
-    >>> position_direction_word(['a', 'b', 'c', 'd', 'e'], 'f')
-    []
-    """
-    positions = []
-    for i in range(len(letter_list)):
-        # get the directions where the word can be found starting from the current position
-        directions = direction_word_given_position(letter_list, word, i)
-        for direction in directions:
-            # append the position and direction to the positions list
-            positions.append([i, direction])
-    return positions
-
-
-
-def cross_word_position_direction(bool_letter_list, length_word, index,
-                                   direction):
-    """
-    Given a boolean list, the length of a word, an index, and a 
-    direction (LEFT or RIGHT), updates the values in the boolean 
-    list to True for the positions where the word crosses.
-
-    Args:
-    - bool_letter_list (List[bool]): A boolean list.
-    - length_word (int): The length of the word.
-    - index (int): The index in the boolean list where the word starts.
-    - direction (int): The direction in which 
-      the word crosses (LEFT or RIGHT).
-
-    Returns:
-    - None
-
-    Example:
-    >>> bool_letter_list = [False] * 5
-    >>> cross_word_position_direction(bool_letter_list, 2, 0, RIGHT)
-    >>> bool_letter_list
-    [True, True, False, False, False]
-    >>> bool_letter_list = [False] * 5
-    >>> cross_word_position_direction(bool_letter_list, 2, 3, LEFT)
-    >>> bool_letter_list
-    [False, False, True, True, False]
-    """
-    # Update the values in bool_letter_list
-    #based on the given index, length_word, and direction
-    for i in range(length_word):
-        bool_letter_list[index + i*direction] = True
-
-
-
-def cross_word_all_position_direction(bool_letter_list, length_word,
-                                      list_position_direction):
-    """
-    Given a boolean list, the length of a word, and a list of positions and
-    directions where the word can be found in the list, updates the values in
-    the boolean list to True for all positions where the word crosses.
-
-    Args:
-    - bool_letter_list (List[bool]): A boolean list.
-    - length_word (int): The length of the word.
-    - list_position_direction (List[List[int]]): A list of positions and
-    directions where the word can be found in the list.
-
-    Returns:
-    - None
-
-    Example:
-    >>> bool_letter_list = [False] * 5
-    >>> cross_word_all_position_direction(bool_letter_list, 2, [[0, 1]])
-    >>> bool_letter_list
-    [True, True, False, False, False]
-    >>> bool_letter_list = [False] * 5
-    >>> cross_word_all_position_direction(bool_letter_list, 2, [[2, -1],
-    [2, 1]])
-    >>> bool_letter_list
-    [False, False, True, True, False]
-    """
-    # loop through each position and direction in the list
-    for position_direction in list_position_direction:
-        # get the index and direction
-        index, direction = position_direction
-        # call the cross_word_position_direction function to update the boolean list
-        cross_word_position_direction(bool_letter_list, length_word, index,
-                                      direction)
-
-
-
-
-def word_search(letter_list, word_list):
-    """
-    Finds a magic word in a letter list by searching for words in a word list.
-
-    Args:
-        letter_list (list): A list of strings 
-        representing the letters to search through.
-        word_list (list): A list of strings representing
-        the words to search for.
-
-    Returns:
-        str: The magic word found in the letter list.
-
-    Examples:
-        >>> word_search(['a', 'b', 'c', 'd', 'e'], ['bad', 'cab', 'dad'])
-        'cab'
-        >>> word_search(['a', 'b', 'c', 'd', 'e'], ['bad', 'bed', 'dad'])
-        'bad'
-        >>> word_search(['a', 'b', 'c', 'd', 'e'], ['bee', 'ebb', 'add'])
-        'add'
-    """
-
-    # Initialize a boolean list to keep track of 
-    # which positions in the letter list have been used
-    bool_letter_list = [False] * len(letter_list)
-
-    # Iterate through each word in the word list
-    for word in word_list:
-        # Iterate through each position in the letter list
-        for i in range(len(letter_list)):
-            # Check if the current word can be found starting from the 
-            # current position
-            positions = direction_word_given_position(letter_list, word, i)
-            if positions:
-                # If the word can be found, mark the positions 
-                # as used in the boolean list
-                valid_word_pos_direction(letter_list, word, i, positions[0])
-                cross_word_all_position_direction(bool_letter_list, len(word), 
-                                                   [[i, positions[0]]])
-    # Find the magic word using the boolean list
-    magic_word = find_magic_word(letter_list, bool_letter_list)
-    return magic_word
-
-
-
-def find_magic_word(letter_list, bool_letter_list):
-    """
-    This function takes in two lists of the same length, one 
-    containing letters and the other containing boolean values.
-    It returns a string that is formed by concatenating all
-    the non-crossed letters in the order they appear in the input list,
-    except for the letters that appear between two crossed 
-    letters, which are not included in the output.
-
-    Args:
-    - letter_list (list[str]): A list of letters
-    - bool_letter_list (list[bool]): A list of boolean values 
-    indicating whether the corresponding letter in 
-    letter_list is crossed or not
-
-    Returns:
-    - str: A string formed by concatenating all the non-crossed 
-    letters in the order they appear in the input list,
-    except for the letters that appear between two crossed letters, 
-    which are not included in the output.
-
-    Example:
-    >>> find_magic_word(['a', 'b', 'c', 'd'], [False, True, False, True])
-    'ad'
-    >>> find_magic_word(['a', 'b', 'c', 'd'], [True, False, True, False])
-    'bd'
-    >>> find_magic_word(['a', 'b', 'c', 'd'], [False, False, False, False])
-    'abcd'
-    """
-
-    # Check if both lists have the same size
-    if len(letter_list) != len(bool_letter_list):
-        raise ValueError('Both lists should have the same size')
-    
-    # Initialize variables
-    magic_word = '' # initialize an empty string to hold the magic word
-    current_word = '' # initialize an empty string to hold the current word
-    i = 0 # initialize a counter variable
-    
-    # Iterate through each letter and its corresponding boolean value
-    while i < len(letter_list):
-        crossed = bool_letter_list[i] 
-        # get the boolean value of the current letter
+    while True:
+        # Generate a random number between -10 and 10
+        random_step = random.uniform(-10, 10)
         
-        # If the letter is not crossed, add it to the current word
-        if not crossed:
-            current_word += letter_list[i]
-            i += 1
+        # Calculate the new position by adding the random step
+        new_position = position + random_step
         
-        # If the letter is crossed and the current word 
-        # is not empty, add it to the magic word
-        elif current_word:
-            magic_word += current_word
-            current_word = ''
-            i += 1
+        # Check if the new position is within 
+        # the (min_float, max_float) interval
+        if min_float < new_position < max_float:
+            return round(new_position, 2)
         
-        # If the letter is crossed and the current word is empty,
-        # skip it and move on to the next letter
-        else:
-            i += 1
-    
-    # Add the last current word to the magic word if it is not empty
-    if current_word:
-        magic_word += current_word
-    
-    return magic_word
 
-
-
-
-def word_search_main(letters, words):
+def wave_hit_vessel(vessel_latitude, vessel_longitude):
     """
-    This function takes a string of letters and a string of words 
-    separated by '-' and returns a magic word that can be formed 
-    using the given letters.
-
-    Args:
-    letters (str): A string of letters.
-    words (str): A string of words separated by '-'.
-
-    Returns:
-    str: A magic word that can be formed using the given letters.
-
-    Examples:
-    >>> word_search_main("EERHTT", "TREE-HOUSE-TEST")
-    'TREEHOUSE'
-    >>> word_search_main("ABDEFGHILMNOPRSTUWY", "WORD-SEARCH-PUZZLE")
-    'WORDPUZZLE'
-    >>> word_search_main("AEIOUY", "QUIZ-YOU-A")
-    'QUIZ'
+    Function to simulate waves hitting the vessel and update its position
     """
-    # Convert letters to uppercase and create a list of characters
-    letter_list = list(letters.upper())
+    global new_latitude
+    global new_longitude
+    global latitude
+    global longitude
+
+    # Update latitude and longitude separately 
+    # while ensuring they stay within bounds
+    new_latitude = update_coordinate(vessel_latitude, MIN_LAT, MAX_LAT)
+    new_longitude = update_coordinate(vessel_longitude, MIN_LONG, MAX_LONG)
     
-    # Create an empty list to store the words
-    word_list = []
+    # Check safety of the new location
+    check_safety(new_latitude, new_longitude)
     
-    # Create an empty string to store the current word
-    word = ""
+    # Return the updated coordinates as a tuple
+    return new_latitude, new_longitude
+
+def vessel_menu():
+    """
+    Displays a menu for the user to interact with vessel-related functions.
     
-    # Loop through each character in the words string
-    for char in words:
-        # If the character is a '-', the current word is complete
-        if char == "-":
-            # Add the current word to the word list
-            word_list.append(word.upper())
-            # Reset the current word
-            word = ""
-        # If the character is not a '-', add it to the current word
-        else:
-            word += char
-    # Add the final word to the word list
-    word_list.append(word.upper())
+    The menu allows the user to:
+    1. Check the safety of the boat's current location.
+    2. Check the maximum number of people that can fit on the boat.
+    3. Update the position of the boat due to waves.
+    4. Exit the boat menu.
     
-    # Call word_search function and return the magic word
-    return word_search(letter_list, word_list)
+    The function will repeatedly display the menu until the user 
+    chooses to exit (option 4).
+    """
+    global choice
+    global latitude
+    global longitude
+
+    global new_latitude
+    global new_longitude
+    global latitude
+    global longitude
+    global num_passengers
+
+    # Initialize choice to a value outside the range of 0-3
+    choice = 10
+
+
+    print('Welcome to the boat menu!')
+    
+    get_gps_location()
+
+    print('Your current position is at latitude', 
+          latitude, 'and longitude',longitude)
+
+    (vessel_length, vessel_width) = get_vessel_dimensions()
+
+    print('Your boat measures', vessel_length, 'feet by',vessel_width,
+           'feet')
+
+    while choice != '4' :
+        
+        print("Please select an option below: ")
+        print("1. Check the safety of your boat")
+        print("2. Check the maximum number of people" + 
+              " that can fit on the boat")
+        print("3. Update the position of your boat")
+        print("4. Exit boat menu")
+
+        choice = (input("Your selection: "))
+
+        if choice == '1':
+                check_safety(latitude, longitude)
+        elif choice == '2':
+                num_passengers = int(input("Enter the number of" 
+                + " adults to go on the boat: "))
+                if passengers_on_boat(vessel_length, 
+                                      vessel_width, 
+                                      num_passengers):
+                    print('Your boat can hold', num_passengers,
+                           'adults')
+                else:
+                    print("The boat cannot hold ", num_passengers,
+                           "adults")
+        elif choice == '3':
+                latitude, longitude = wave_hit_vessel(latitude, 
+                                                      longitude)
+                print("Your new position is latitude of", latitude, 
+                      "and longitude of",longitude)
+
+        elif choice == '4' :
+            print("End of boat menu.")
